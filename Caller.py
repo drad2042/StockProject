@@ -6,13 +6,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import time
-
+pd.get_option("display.max_rows")
+pd.set_option("display.max_rows",999)
 
 class Caller:
 
     def __init__(self):
         options = Options()
         options.add_argument("headless")
+        options.add_argument("--log-level=3")
         driver = webdriver.Chrome(options = options)
         self.driver = driver
         #self.site = pd.read_html('https://finance.yahoo.com/most-active/?count=100')
@@ -40,8 +42,8 @@ class Caller:
             df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
             
             self.driver.quit()
-            
-            return df
+
+            return df[['Date','High','Low']]
             
 
     
