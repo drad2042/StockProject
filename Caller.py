@@ -14,10 +14,6 @@ class Caller:
         options = Options()
         options.add_argument("headless")
         driver = webdriver.Chrome(options = options)
-        
-
-        driver.get('https://finance.yahoo.com/most-active/?count=100')
-        driver.refresh()
         self.driver = driver
         #self.site = pd.read_html('https://finance.yahoo.com/most-active/?count=100')
         time.sleep(3)
@@ -31,19 +27,29 @@ class Caller:
         symbol = self.df.loc[self.df['Symbol'] == symbol.upper()]
         self.symbol = symbol
         if symbol.empty:
-            return 'There is no such symbol on the top 25 currently.'
+            return 'There is no such symbol on the top 100 currently.'
         return symbol
     
     def timeAnalysis(self, stockSymbol): #Makes a table for the historical analysis of a stock.
-            #For now this only uses stock symbols in the initial dataframe, needs to be changed.
-            time.sleep(3)
-            self.site2 = pd.read_html(f'https://finance.yahoo.com/quote/AMD/')
-            #self.df2 = pd.DataFrame(site2[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
+            url = f"https://finance.yahoo.com/quote/{stockSymbol}/history"
+            self.driver.get(url)
+            self.driver.refresh()
+
+            html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
+            df = pd.read_html(html.get_attribute('outerHTML'))
+            df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
             
-            return self.site2
+            self.driver.quit()
+            
+            return df
+            
 
     
     def dfCreateSel(self):
+        url = 'https://finance.yahoo.com/most-active/?count=100'
+        self.driver.get(url)
+        self.driver.refresh()
+
         html = self.driver.find_element(By.XPATH, '//*[@id="scr-res-table"]/div[1]/table')
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0], columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range'])
@@ -57,9 +63,9 @@ class Caller:
 
 caller = Caller()
 
-print(caller.dfCreateSel())
-print(caller.checkSymbol('nvda'))
-#print(caller.checkSymbol('AMD'))
+#print(caller.dfCreateSel())
+#print(caller.checkSymbol('nvda'))
+print(caller.timeAnalysis('AMD'))
 #print(caller.checkSymbol('))
 
 
