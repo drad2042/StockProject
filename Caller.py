@@ -6,10 +6,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import time
+import matplotlib.pyplot as plt
 pd.get_option("display.max_rows")
 pd.set_option("display.max_rows",999)
 
-class Caller:
+class Call:
 
     def __init__(self):
         options = Options()
@@ -36,23 +37,25 @@ class Caller:
             url = f"https://finance.yahoo.com/quote/{stockSymbol}/history"
             self.driver.get(url)
             self.driver.refresh()
+            #self.driver.send_keys(Keys.CONTROL + Keys.END)
+
 
             html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
             df = pd.read_html(html.get_attribute('outerHTML'))
             df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
-            
             self.driver.quit()
 
-            return df[['Date','High','Low']]
+            return df[['Date','High','Low', 'Close*']]
             
 
     
-    def dfCreateSel(self):
+    def dfCreateSel(self): #Creates a dataframe using Selenium for the top 100 most active stocks.
         url = 'https://finance.yahoo.com/most-active/?count=100'
         self.driver.get(url)
         self.driver.refresh()
-
+        
         html = self.driver.find_element(By.XPATH, '//*[@id="scr-res-table"]/div[1]/table')
+        
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0], columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range'])
         self.df = df
@@ -63,13 +66,19 @@ class Caller:
     
         
 
-caller = Caller()
+caller = Call()
 
 #print(caller.dfCreateSel())
 #print(caller.checkSymbol('nvda'))
-print(caller.timeAnalysis('AMD'))
+#print(caller.timeAnalysis('AMD'))
 #print(caller.checkSymbol('))
 
+historyTable = caller.timeAnalysis('ROKU')
+#plt.plot(historyTable['Close*'])
+#plt.show()
 
-
-
+'''plt.figure(figsize=(15,5))
+plt.plot(historyTable['Close*'])
+plt.title('Close price.', fontsize=15)
+plt.ylabel('Price in dollars.')
+plt.show()'''
