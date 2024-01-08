@@ -70,10 +70,10 @@ caller = Call()
 
 #print(caller.dfCreateSel())
 #print(caller.checkSymbol('nvda'))
-#print(caller.timeAnalysis('AMD'))
+print(caller.timeAnalysis('AMD'))
 #print(caller.checkSymbol('))
 
-historyTable = caller.timeAnalysis('ROKU')
+#historyTable = caller.timeAnalysis('ROKU')
 #plt.plot(historyTable['Close*'])
 #plt.show()
 

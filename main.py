@@ -1,5 +1,5 @@
 #import Caller
 from Caller import Call
 
-temp = Call.timeAnalysis('AMD')
-print(temp)
+temp = Call.timeAnalysis('NVDA')
+Call.print(temp)
