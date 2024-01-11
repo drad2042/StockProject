@@ -7,6 +7,9 @@ from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import time
 import matplotlib.pyplot as plt
+from IPython.display import display
+#import warnings
+#warnings.simplefilter(action='ignore', category=FutureWarning)
 pd.get_option("display.max_rows")
 pd.set_option("display.max_rows",999)
 
@@ -16,15 +19,9 @@ class Call:
         options = Options()
         options.add_argument("headless")
         options.add_argument("--log-level=3")
-        driver = webdriver.Chrome(options = options)
-        self.driver = driver
-        #self.site = pd.read_html('https://finance.yahoo.com/most-active/?count=100')
+        self.driver = webdriver.Chrome(options = options)
         time.sleep(3)
 
-    def createDf(self): #Function that creates a dataframe for the top 25 most active stocks of the day.
-        df = pd.DataFrame(self.site[0],  columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range'])
-        self.df = df
-        return self.df
 
     def checkSymbol(self, symbol):
         symbol = self.df.loc[self.df['Symbol'] == symbol.upper()]
@@ -60,11 +57,11 @@ class Call:
         
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0], columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range'])
-        df.sort_values(by = ['Change'])
-        self.df = df
+        self.top100 = df
         
         self.driver.quit()
         
+        df.to_csv('Files\\Top100.csv', index = True)
         return df
     
 
@@ -76,11 +73,15 @@ class Call:
         html = self.driver.find_element(By.XPATH, '//*[@id="scr-res-table"]/div[1]/table')
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0])
-        
+        df = df.drop(columns = ['52 Week Range'])
+        df = df.sort_values(by = ['Change'], ascending = False)
+
         ''', columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range']'''
         # Add into line above if there are misinterpretations.
         
         self.driver.quit()
+
+        df.to_csv('Files\\Gainer.csv', index = True)
         return df
     
 
