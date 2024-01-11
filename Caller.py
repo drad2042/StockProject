@@ -45,39 +45,58 @@ class Call:
             df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
             self.driver.quit()
 
-            return df[['Date','High','Low', 'Close*']]
+            return df
+            #return df[['Date','High','Low', 'Close*']]
             
 
     
-    def dfCreateSel(self): #Creates a dataframe using Selenium for the top 100 most active stocks.
+    def top100Table(self): #Creates a dataframe using Selenium for the top 100 most active stocks.
         url = 'https://finance.yahoo.com/most-active/?count=100'
         self.driver.get(url)
         self.driver.refresh()
+        time.sleep(2)
         
         html = self.driver.find_element(By.XPATH, '//*[@id="scr-res-table"]/div[1]/table')
         
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0], columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range'])
+        df.sort_values(by = ['Change'])
         self.df = df
         
         self.driver.quit()
         
         return df
     
-        
 
-caller = Call()
+    def gainerTable(self): #Creates a dataframe for the highest gainers today.
+        url = 'https://finance.yahoo.com/gainers/'
+        self.driver.get(url)
+        self.driver.refresh()
+
+        html = self.driver.find_element(By.XPATH, '//*[@id="scr-res-table"]/div[1]/table')
+        df = pd.read_html(html.get_attribute('outerHTML'))
+        df = pd.DataFrame(df[0])
+        
+        ''', columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range']'''
+        # Add into line above if there are misinterpretations.
+        
+        self.driver.quit()
+        return df
+    
+
+'''#caller = Call()
 
 #print(caller.dfCreateSel())
 #print(caller.checkSymbol('nvda'))
-print(caller.timeAnalysis('AMD'))
+#print(caller.timeAnalysis('AMD'))
 #print(caller.checkSymbol('))
 
 #historyTable = caller.timeAnalysis('ROKU')
+#print(historyTable)
 #plt.plot(historyTable['Close*'])
 #plt.show()
 
-'''plt.figure(figsize=(15,5))
+plt.figure(figsize=(15,5))
 plt.plot(historyTable['Close*'])
 plt.title('Close price.', fontsize=15)
 plt.ylabel('Price in dollars.')
