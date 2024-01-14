@@ -8,8 +8,7 @@ from bs4 import BeautifulSoup
 import time
 import matplotlib.pyplot as plt
 from IPython.display import display
-#import warnings
-#warnings.simplefilter(action='ignore', category=FutureWarning)
+
 pd.get_option("display.max_rows")
 pd.set_option("display.max_rows",999)
 
@@ -20,7 +19,7 @@ class Call:
         options.add_argument("headless")
         options.add_argument("--log-level=3")
         self.driver = webdriver.Chrome(options = options)
-        time.sleep(3)
+        time.sleep(2)
 
 
     def checkSymbol(self, symbol):
@@ -30,23 +29,60 @@ class Call:
             return 'There is no such symbol on the top 100 currently.'
         return symbol
     
+
+
+
+
+
     def timeAnalysis(self, stockSymbol): #Makes a table for the historical analysis of a stock.
-            url = f"https://finance.yahoo.com/quote/{stockSymbol}/history"
+            period = input('Which time period do you want to see the time for? (1Y, 5Y, Max) ')
+            
+            if period == '1Y':
+                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1673481600&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+            elif period == '5Y':
+                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1547251200&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+            elif period == 'Max':
+                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1506556800&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+            
+            stockSymbol = stockSymbol.upper()
+            
+            #url = f"https://finance.yahoo.com/quote/{stockSymbol}/history"
             self.driver.get(url)
             self.driver.refresh()
-            #self.driver.send_keys(Keys.CONTROL + Keys.END)
 
+            ## Find the buttons to  
+            '''button = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/div[1]/div/div/div')
+            button.click()
+            fiveYearButton = self.driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/ul[2]/li[3]/button')
+            fiveYearButton.click()
+            applyButton = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/button')
+            applyButton.click()
+            '''
+            time.sleep(5)
+
+            while True:
+                current_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
+                self.driver.execute_script(f"window.scrollTo(0, {current_height});")
+                time.sleep(1)
+                new_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
+                if new_height == current_height:
+                    break
 
             html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
             df = pd.read_html(html.get_attribute('outerHTML'))
             df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
             self.driver.quit()
 
+
+            df.to_csv(f'Files\\History\\{stockSymbol}History.csv')
             return df
             #return df[['Date','High','Low', 'Close*']]
             
 
     
+
+
+
     def top100Table(self): #Creates a dataframe using Selenium for the top 100 most active stocks.
         url = 'https://finance.yahoo.com/most-active/?count=100'
         self.driver.get(url)
@@ -74,8 +110,9 @@ class Call:
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0])
         df = df.drop(columns = ['52 Week Range'])
+        #df['% Change'] = df['% Change'].str.replace('%','')
         df = df.sort_values(by = ['Change'], ascending = False)
-
+        df = df.reset_index(drop = True)
         ''', columns = ['Symbol','Name','Price (Intraday)','Change','% Change','Volume','Avg Vol (3 month)','Market Cap', 'PE Ratio (TTM)','52 Week Range']'''
         # Add into line above if there are misinterpretations.
         

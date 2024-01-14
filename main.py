@@ -3,7 +3,7 @@ from IPython.display import display, HTML
 c = Call()
 
 def main():
-    temp = c.gainerTable()
+    temp = c.timeAnalysis('AMZN')
     print(temp)
 
 
