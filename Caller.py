@@ -37,9 +37,14 @@ class Call:
 
 
 
-    def timeAnalysis(self, stockSymbol): #Makes a table for the historical analysis of a stock.        
+    def timeAnalysis(self, stockSymbol = input("Input the ticker of the stock you want to analyze: ")): #Makes a table for the historical analysis of a stock.        
+        #stockSymbol = input("Input the ticker of the stock you want to analyze: ")
+        stockSymbol = stockSymbol.upper()
+        
+        self.stockSymbol = stockSymbol
+
         period = input('Which time period do you want to see the time for? (1Y, 5Y, Max) ')
-            
+        
         if period == '1Y':
             url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1673481600&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
         elif period == '5Y':
@@ -47,7 +52,8 @@ class Call:
         elif period == 'Max':
             url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=322099200&period2=1705449600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
             #url = f"https://finance.yahoo.com/quote/AMD/history?period1=322099200&period2=1705449600&interval=1wk&filter=history&frequency=1wk&includeAdjustedClose=true"
-            
+        
+        self.period = period
         self.driver.get(url)
         self.driver.refresh()
 
@@ -82,8 +88,10 @@ class Call:
         df = df.iloc[::-1]
         self.driver.quit()
 
-        if not os.path.exists(f"Files\\History\\{stockSymbol}"):
+        folderPath = f"Files\\History\\{stockSymbol}"
+        if not os.path.exists(folderPath):
             os.mkdir(f"Files\\History\\{stockSymbol}")
+        
         df.to_csv(f'Files\\History\\{stockSymbol}\\{stockSymbol}{period}History.csv')
         return df
         #return df[['Date','High','Low', 'Close*']]
