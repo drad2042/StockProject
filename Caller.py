@@ -4,10 +4,12 @@ from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from bs4 import BeautifulSoup
+#from bs4 import BeautifulSoup
 import time
 import matplotlib.pyplot as plt
-from IPython.display import display
+#from IPython.display import display
+#import plotly.express as px
+import os
 
 pd.get_option("display.max_rows")
 pd.set_option("display.max_rows",999)
@@ -19,6 +21,7 @@ class Call:
         options.add_argument("headless")
         options.add_argument("--log-level=3")
         self.driver = webdriver.Chrome(options = options)
+        self.stockSymbol = None
         time.sleep(2)
 
 
@@ -34,53 +37,57 @@ class Call:
 
 
 
-    def timeAnalysis(self, stockSymbol): #Makes a table for the historical analysis of a stock.
-            period = input('Which time period do you want to see the time for? (1Y, 5Y, Max) ')
+    def timeAnalysis(self, stockSymbol): #Makes a table for the historical analysis of a stock.        
+        period = input('Which time period do you want to see the time for? (1Y, 5Y, Max) ')
             
-            if period == '1Y':
-                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1673481600&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
-            elif period == '5Y':
-                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1547251200&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
-            elif period == 'Max':
-                url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1506556800&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+        if period == '1Y':
+            url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1673481600&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+        elif period == '5Y':
+            url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1547251200&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+        elif period == 'Max':
+            url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=322099200&period2=1705449600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
+            #url = f"https://finance.yahoo.com/quote/AMD/history?period1=322099200&period2=1705449600&interval=1wk&filter=history&frequency=1wk&includeAdjustedClose=true"
             
-            stockSymbol = stockSymbol.upper()
+        self.driver.get(url)
+        self.driver.refresh()
+
+        ## Find the buttons to click for time period.
+        '''button = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/div[1]/div/div/div')
+        button.click()
+        fiveYearButton = self.driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/ul[2]/li[3]/button')
+        fiveYearButton.click()
+        applyButton = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/button')
+        applyButton.click()
+        '''
+        time.sleep(2)
+
+
+
+        while True: #Continuously scroll to bottom of the page
+            current_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
+            self.driver.execute_script(f"window.scrollTo(0, {current_height});")
+            time.sleep(1)
+            new_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
+            if new_height == current_height:
+                break
+
+        html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
+        df = pd.read_html(html.get_attribute('outerHTML'))
+        df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
+        #df = df.drop_duplicates(subset = 'Date', keep = 'first')
             
-            #url = f"https://finance.yahoo.com/quote/{stockSymbol}/history"
-            self.driver.get(url)
-            self.driver.refresh()
+        df["Open"] = pd.to_numeric(df["Open"], errors = 'coerce')
+        df = df.dropna(subset = ["Open"])
+        df = df.drop(df.tail(1).index)
+        df = df.iloc[::-1]
+        self.driver.quit()
 
-            ## Find the buttons to  
-            '''button = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/div[1]/div/div/div')
-            button.click()
-            fiveYearButton = self.driver.find_element(By.XPATH, '//*[@id="dropdown-menu"]/div/ul[2]/li[3]/button')
-            fiveYearButton.click()
-            applyButton = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[1]/div[1]/button')
-            applyButton.click()
-            '''
-            time.sleep(5)
-
-            while True:
-                current_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
-                self.driver.execute_script(f"window.scrollTo(0, {current_height});")
-                time.sleep(1)
-                new_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
-                if new_height == current_height:
-                    break
-
-            html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
-            df = pd.read_html(html.get_attribute('outerHTML'))
-            df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
-            self.driver.quit()
-
-
-            df.to_csv(f'Files\\History\\{stockSymbol}History.csv')
-            return df
-            #return df[['Date','High','Low', 'Close*']]
+        if not os.path.exists(f"Files\\History\\{stockSymbol}"):
+            os.mkdir(f"Files\\History\\{stockSymbol}")
+        df.to_csv(f'Files\\History\\{stockSymbol}\\{stockSymbol}{period}History.csv')
+        return df
+        #return df[['Date','High','Low', 'Close*']]
             
-
-    
-
 
 
     def top100Table(self): #Creates a dataframe using Selenium for the top 100 most active stocks.
@@ -122,6 +129,18 @@ class Call:
         return df
     
 
+'''tempDF = pd.read_csv('Files\\History\\NVDAMaxHistory.csv')
+
+plt.figure(figsize = (20,7))
+plt.plot(tempDF['Date'],tempDF['Close*'])
+plt.title("Stock History")
+plt.xlabel("Share Price (USD)")
+plt.ylabel("Date")
+plt.xticks([])
+#plt.tight_layout()
+
+plt.show()
+'''
 '''#caller = Call()
 
 #print(caller.dfCreateSel())
