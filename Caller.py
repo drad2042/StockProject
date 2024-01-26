@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 #from IPython.display import display
 #import plotly.express as px
 import os
+import dask.dataframe as dd
+from dask.distributed import Client
 
 pd.get_option("display.max_rows")
 pd.set_option("display.max_rows",999)
@@ -38,9 +40,7 @@ class Call:
 
 
     def timeAnalysis(self, stockSymbol = input("Input the ticker of the stock you want to analyze: ")): #Makes a table for the historical analysis of a stock.        
-        #stockSymbol = input("Input the ticker of the stock you want to analyze: ")
         stockSymbol = stockSymbol.upper()
-        
         self.stockSymbol = stockSymbol
 
         period = input('Which time period do you want to see the time for? (1Y, 5Y, Max) ')
@@ -51,7 +51,6 @@ class Call:
             url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=1547251200&period2=1705017600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
         elif period == 'Max':
             url = f"https://finance.yahoo.com/quote/{stockSymbol}/history?period1=322099200&period2=1705449600&interval=1d&filter=history&frequency=1d&includeAdjustedClose=true"
-            #url = f"https://finance.yahoo.com/quote/AMD/history?period1=322099200&period2=1705449600&interval=1wk&filter=history&frequency=1wk&includeAdjustedClose=true"
         
         self.period = period
         self.driver.get(url)
@@ -76,12 +75,15 @@ class Call:
             new_height = self.driver.execute_script("return Math.max( document.body.scrollHeight, document.body.offsetHeight, document.documentElement.clientHeight, document.documentElement.scrollHeight, document.documentElement.offsetHeight);")
             if new_height == current_height:
                 break
+        
+        self.title = self.driver.find_element(By.XPATH, '//*[@id="quote-header-info"]/div[2]/div[1]/div[1]/h1')
+        self.title = self.title.get_property("innerHTML")
 
         html = self.driver.find_element(By.XPATH, '//*[@id="Col1-1-HistoricalDataTable-Proxy"]/section/div[2]/table')
         df = pd.read_html(html.get_attribute('outerHTML'))
         df = pd.DataFrame(df[0], columns = ['Date','Open','High','Low','Close*','Adj Close**','Volume'])
         #df = df.drop_duplicates(subset = 'Date', keep = 'first')
-            
+
         df["Open"] = pd.to_numeric(df["Open"], errors = 'coerce')
         df = df.dropna(subset = ["Open"])
         df = df.drop(df.tail(1).index)
@@ -136,33 +138,5 @@ class Call:
         df.to_csv('Files\\Gainer.csv', index = True)
         return df
     
-
-'''tempDF = pd.read_csv('Files\\History\\NVDAMaxHistory.csv')
-
-plt.figure(figsize = (20,7))
-plt.plot(tempDF['Date'],tempDF['Close*'])
-plt.title("Stock History")
-plt.xlabel("Share Price (USD)")
-plt.ylabel("Date")
-plt.xticks([])
-#plt.tight_layout()
-
-plt.show()
-'''
-'''#caller = Call()
-
-#print(caller.dfCreateSel())
-#print(caller.checkSymbol('nvda'))
-#print(caller.timeAnalysis('AMD'))
-#print(caller.checkSymbol('))
-
-#historyTable = caller.timeAnalysis('ROKU')
-#print(historyTable)
-#plt.plot(historyTable['Close*'])
-#plt.show()
-
-plt.figure(figsize=(15,5))
-plt.plot(historyTable['Close*'])
-plt.title('Close price.', fontsize=15)
-plt.ylabel('Price in dollars.')
-plt.show()'''
+    def graphMaker():
+        pass
